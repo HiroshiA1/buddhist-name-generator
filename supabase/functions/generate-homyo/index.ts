@@ -36,6 +36,10 @@ serve(async (req) => {
 
   const { firstName, gender, hasIngo, hobbies, skills, personality, customCharacter } = requestData
 
+  console.log('=== DEBUG INFO ===')
+  console.log('Request data:', JSON.stringify(requestData, null, 2))
+  console.log('hasIngo value:', hasIngo)
+  console.log('hasIngo type:', typeof hasIngo)
   console.log('GEMINI_API_KEY exists:', !!GEMINI_API_KEY)
   
   if (!GEMINI_API_KEY) {
@@ -184,6 +188,35 @@ serve(async (req) => {
       const jsonContent = jsonMatch ? jsonMatch[0] : cleanContent
       
       parsedResponse = JSON.parse(jsonContent);
+      
+      // 【重要】院号が指定されているのに院号がついていない場合の強制修正
+      if (hasIngo && parsedResponse.suggestions) {
+        console.log('=== APPLYING INGO FORCE FIX ===')
+        console.log('Original suggestions:', JSON.stringify(parsedResponse.suggestions, null, 2))
+        
+        const ingoTemplates = ['慈光院', '智慧院', '福徳院', '真如院', '法性院', '妙法院']
+        
+        parsedResponse.suggestions = parsedResponse.suggestions.map((suggestion: any, index: number) => {
+          // 既に院号がついているかチェック
+          if (!suggestion.name.includes('院')) {
+            const ingoName = ingoTemplates[index % ingoTemplates.length]
+            const originalName = suggestion.name.replace(/^釋(尼)?/, '')
+            const newName = `${ingoName}${genderSuffix}${originalName}`
+            
+            console.log(`Fixing suggestion ${index}: ${suggestion.name} -> ${newName}`)
+            
+            return {
+              ...suggestion,
+              name: newName,
+              reading: suggestion.reading.replace(/^しゃく(に)?/, ingoName.toLowerCase() + 'いん' + (genderSuffix === '釋尼' ? 'しゃくに' : 'しゃく'))
+            }
+          }
+          return suggestion
+        })
+        
+        console.log('Fixed suggestions:', JSON.stringify(parsedResponse.suggestions, null, 2))
+      }
+      
     } catch (parseError) {
       console.error('Error parsing Gemini response as JSON:', parseError)
       console.error('Raw content:', generatedContent)
