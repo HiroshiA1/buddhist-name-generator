@@ -11,6 +11,7 @@ interface GenerationHistoryItem {
     firstName: string;
     gender: 'male' | 'female';
     hasIngo: boolean;
+    ingoName?: string;
     hobbies: string[];
     skills: string[];
     personality: string;
@@ -91,6 +92,9 @@ export default function MyPage() {
                     <div><strong>俗名:</strong> {item.input_data.firstName}</div>
                     <div><strong>性別:</strong> {item.input_data.gender === 'male' ? '男性' : '女性'}</div>
                     <div><strong>院号の有無:</strong> {item.input_data.hasIngo ? 'あり' : 'なし'}</div>
+                    {item.input_data.hasIngo && item.input_data.ingoName && (
+                      <div><strong>院号名:</strong> {item.input_data.ingoName}院</div>
+                    )}
                     {item.input_data.hobbies && item.input_data.hobbies.length > 0 && (
                       <div><strong>趣味:</strong> {item.input_data.hobbies.join(', ')}</div>
                     )}

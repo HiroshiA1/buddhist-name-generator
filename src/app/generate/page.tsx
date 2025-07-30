@@ -8,6 +8,7 @@ interface GenerationRequest {
   firstName: string;
   gender: 'male' | 'female';
   hasIngo: boolean;
+  ingoName?: string;
   hobbies: string[];
   skills: string[];
   personality: string;
@@ -28,6 +29,7 @@ export default function GeneratePage() {
   const [name, setName] = useState('')
   const [gender, setGender] = useState<'male' | 'female'>('male')
   const [hasIngo, setHasIngo] = useState(false)
+  const [ingoName, setIngoName] = useState('')
   const [hobbies, setHobbies] = useState('')
   const [skills, setSkills] = useState('')
   const [personality, setPersonality] = useState('')
@@ -62,15 +64,30 @@ export default function GeneratePage() {
     setLoading(true)
     setGeneratedNames([])
 
+    // 俗名漢字の文字数チェック
+    if (customCharacter && customCharacter.length > 1) {
+      alert('俗名から含めたい漢字は1文字のみ入力してください。')
+      setLoading(false)
+      return
+    }
+
+    // 院号名の必須チェック
+    if (hasIngo && !ingoName.trim()) {
+      alert('院号を「あり」にした場合は、院号名を入力してください。')
+      setLoading(false)
+      return
+    }
+
     try {
       const requestBody: GenerationRequest = {
         firstName: name,
         gender,
         hasIngo,
+        ...(hasIngo && ingoName.trim() && { ingoName: ingoName.trim() }),
         hobbies: hobbies.split(',').map(s => s.trim()).filter(s => s),
         skills: skills.split(',').map(s => s.trim()).filter(s => s),
         personality,
-        ...(customCharacter && { customCharacter }),
+        ...(customCharacter && customCharacter.length === 1 && { customCharacter }),
       }
 
       const { data, error: functionError } = await supabase.functions.invoke('generate-homyo', {
@@ -189,13 +206,35 @@ export default function GeneratePage() {
                     name="hasIngo"
                     value="false"
                     checked={hasIngo === false}
-                    onChange={() => setHasIngo(false)}
+                    onChange={() => {
+                      setHasIngo(false)
+                      setIngoName('')
+                    }}
                     style={{ accentColor: 'var(--color-sand-beige)' }}
                   />
                   <span>なし</span>
                 </label>
               </div>
             </div>
+
+            {hasIngo && (
+              <div className="form-group">
+                <label htmlFor="ingoName" className="form-label">院号名（3文字、最後に「院」が付きます）</label>
+                <input
+                  type="text"
+                  id="ingoName"
+                  className="input"
+                  placeholder="例: 慈光寺 → 慈光寺院釋○○"
+                  value={ingoName}
+                  onChange={(e) => setIngoName(e.target.value.slice(0, 3))}
+                  maxLength={3}
+                  required
+                />
+                <div className="text-sm text-gray-600 mt-1">
+                  入力例: 「慈光寺」→「慈光寺院釋○○」{gender === 'female' ? '（女性の場合は慈光寺院釋尼○○）' : ''}
+                </div>
+              </div>
+            )}
 
             <div className="form-group">
               <label htmlFor="hobbies" className="form-label">趣味（複数入力可、カンマ区切り）</label>
@@ -234,16 +273,18 @@ export default function GeneratePage() {
             </div>
 
             <div className="form-group">
-              <label htmlFor="customCharacter" className="form-label">俗名から含めたい漢字（任意、一文字）</label>
+              <label htmlFor="customCharacter" className="form-label">俗名から含めたい漢字（任意、漢字1文字のみ）</label>
               <input
                 type="text"
                 id="customCharacter"
                 className="input"
-                placeholder="例: 太"
+                placeholder="例: 太郎の「太」を含めたい場合は「太」と入力"
                 value={customCharacter}
-                onChange={(e) => setCustomCharacter(e.target.value.slice(0, 1))}
-                maxLength={1}
+                onChange={(e) => setCustomCharacter(e.target.value)}
               />
+              <div className="text-sm text-gray-600 mt-1">
+                ひらがなから変換可能です。ただし最終的に漢字1文字のみ有効です。
+              </div>
             </div>
 
             <button

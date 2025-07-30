@@ -52,7 +52,7 @@ export default function Home() {
                 <h4 className="h3" style={{ color: 'var(--color-charcoal)' }}>無料プラン</h4>
                 <div style={{ fontSize: '2.5rem', fontWeight: 'var(--font-weight-light)', color: 'var(--color-charcoal)' }}>¥0</div>
                 <ul style={{ listStyle: 'none', padding: 0, color: 'var(--color-text-secondary)' }} className="space-y-4">
-                  <li>• 初回5回まで法名生成が可能</li>
+                  <li>• 初回3回まで法名生成が可能</li>
                   <li>• 基本機能のみ</li>
                 </ul>
                 <button className="btn btn-primary" style={{ width: '100%' }}>
@@ -66,7 +66,7 @@ export default function Home() {
               <div className="text-center space-y-6">
                 <h4 className="h3" style={{ color: 'var(--color-charcoal)' }}>ベーシックプラン</h4>
                 <div style={{ fontSize: '2.5rem', fontWeight: 'var(--font-weight-light)', color: 'var(--color-charcoal)' }}>
-                  月額 ¥680
+                  月額 ¥480
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, color: 'var(--color-text-secondary)' }} className="space-y-4">
                   <li>• 月10回まで生成可能</li>
@@ -84,7 +84,7 @@ export default function Home() {
               <div className="text-center space-y-6">
                 <h4 className="h3" style={{ color: 'var(--color-charcoal)' }}>プロフェッショナルプラン</h4>
                 <div style={{ fontSize: '2.5rem', fontWeight: 'var(--font-weight-light)', color: 'var(--color-charcoal)' }}>
-                  月額 ¥2,480
+                  月額 ¥1,980
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, color: 'var(--color-text-secondary)' }} className="space-y-4">
                   <li>• 法名生成回数無制限</li>

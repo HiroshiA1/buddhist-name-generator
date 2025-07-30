@@ -124,7 +124,7 @@ body {
 
 .input {
   width: 100%;
-  padding: var(--spacing-md) var(--spacing-lg);
+  padding: calc(var(--spacing-md) - 5px) var(--spacing-lg);
   border: 1px solid var(--border-color);
   border-radius: var(--border-radius);
   font-family: var(--font-family);
@@ -132,7 +132,7 @@ body {
   background-color: white;
   color: var(--color-text-primary);
   transition: all var(--transition-fade);
-  min-height: 52px;
+  min-height: 42px;
   outline: none;
 }
 

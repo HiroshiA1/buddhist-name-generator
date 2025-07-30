@@ -4,7 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { Noto_Serif_JP } from 'next/font/google';
 import "./globals.css";
+
+const notoSerifJP = Noto_Serif_JP({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
 
 export default function RootLayout({
   children,
@@ -53,24 +60,30 @@ export default function RootLayout({
 
   return (
     <html lang="ja">
-      <body className="bg-[#faf8f4] text-[#1f2937]">
+      <body className={`${notoSerifJP.className} bg-[#faf8f4] text-[#1f2937]`}>
         {!isAuthPage && (
           <nav className="bg-white shadow-sm border-b border-gray-200">
             <div className="container mx-auto px-4">
               <div className="flex justify-between items-center h-16">
-                <h1 className="text-xl font-bold text-[#1e3a8a]">法名ジェネレーター</h1>
-                <div className="flex items-center space-x-4">
-                  <Link href="/" className="nav-link">ホーム</Link>
+                <Link href="/" className="flex items-center">
+                  <img 
+                    src="/buddhist-name-gene_logo_hori.png" 
+                    alt="法名ジェネレーター" 
+                    className="h-10 w-auto"
+                  />
+                </Link>
+                <div className="flex items-center space-x-8">
+                  <Link href="/" className="nav-link font-semibold">ホーム</Link>
                   {user ? (
                     <>
-                      <Link href="/generate" className="nav-link">法名生成</Link>
-                      <Link href="/mypage" className="nav-link">マイページ</Link>
-                      <button onClick={handleLogout} className="nav-link">ログアウト</button>
+                      <Link href="/generate" className="nav-link font-semibold">法名生成</Link>
+                      <Link href="/mypage" className="nav-link font-semibold">マイページ</Link>
+                      <button onClick={handleLogout} className="nav-link font-semibold">ログアウト</button>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" className="nav-link">ログイン</Link>
-                      <Link href="/register" className="nav-link">会員登録</Link>
+                      <Link href="/login" className="nav-link font-semibold">ログイン</Link>
+                      <Link href="/register" className="nav-link font-semibold">会員登録</Link>
                     </>
                   )}
                 </div>
