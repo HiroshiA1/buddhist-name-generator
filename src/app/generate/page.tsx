@@ -8,7 +8,6 @@ interface GenerationRequest {
   firstName: string;
   gender: 'male' | 'female';
   hasIngo: boolean;
-  ingoName?: string;
   hobbies: string[];
   skills: string[];
   personality: string;
@@ -29,7 +28,6 @@ export default function GeneratePage() {
   const [name, setName] = useState('')
   const [gender, setGender] = useState<'male' | 'female'>('male')
   const [hasIngo, setHasIngo] = useState(false)
-  const [ingoName, setIngoName] = useState('')
   const [hobbies, setHobbies] = useState('')
   const [skills, setSkills] = useState('')
   const [personality, setPersonality] = useState('')
@@ -71,19 +69,11 @@ export default function GeneratePage() {
       return
     }
 
-    // 院号名の必須チェック
-    if (hasIngo && !ingoName.trim()) {
-      alert('院号を「あり」にした場合は、院号名を入力してください。')
-      setLoading(false)
-      return
-    }
-
     try {
       const requestBody: GenerationRequest = {
         firstName: name,
         gender,
         hasIngo,
-        ...(hasIngo && ingoName.trim() && { ingoName: ingoName.trim() }),
         hobbies: hobbies.split(',').map(s => s.trim()).filter(s => s),
         skills: skills.split(',').map(s => s.trim()).filter(s => s),
         personality,
@@ -206,10 +196,7 @@ export default function GeneratePage() {
                     name="hasIngo"
                     value="false"
                     checked={hasIngo === false}
-                    onChange={() => {
-                      setHasIngo(false)
-                      setIngoName('')
-                    }}
+                    onChange={() => setHasIngo(false)}
                     style={{ accentColor: 'var(--color-sand-beige)' }}
                   />
                   <span>なし</span>
@@ -218,21 +205,9 @@ export default function GeneratePage() {
             </div>
 
             {hasIngo && (
-              <div className="form-group">
-                <label htmlFor="ingoName" className="form-label">院号名（3文字、最後に「院」が付きます）</label>
-                <input
-                  type="text"
-                  id="ingoName"
-                  className="input"
-                  placeholder="例: 慈光寺 → 慈光寺院釋○○"
-                  value={ingoName}
-                  onChange={(e) => setIngoName(e.target.value.slice(0, 3))}
-                  maxLength={3}
-                  required
-                />
-                <div className="text-sm text-gray-600 mt-1">
-                  入力例: 「慈光寺」→「慈光寺院釋○○」{gender === 'female' ? '（女性の場合は慈光寺院釋尼○○）' : ''}
-                </div>
+              <div className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded">
+                <strong>院号について:</strong> 院号は、故人の情報（趣味・特技・人柄など）から最適なものを自動生成いたします。
+                生成される法名の形式: 〇〇院釋〇〇{gender === 'female' ? '（女性の場合は〇〇院釋尼〇〇）' : ''}
               </div>
             )}
 

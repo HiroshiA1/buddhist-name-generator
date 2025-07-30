@@ -72,18 +72,18 @@ export default function RootLayout({
                     className="h-10 w-auto"
                   />
                 </Link>
-                <div className="flex items-center space-x-8">
-                  <Link href="/" className="nav-link font-semibold">ホーム</Link>
+                <div className="flex items-center">
+                  <Link href="/" className="nav-link font-semibold mx-2">ホーム</Link>
                   {user ? (
                     <>
-                      <Link href="/generate" className="nav-link font-semibold">法名生成</Link>
-                      <Link href="/mypage" className="nav-link font-semibold">マイページ</Link>
-                      <button onClick={handleLogout} className="nav-link font-semibold">ログアウト</button>
+                      <Link href="/generate" className="nav-link font-semibold mx-2">法名生成</Link>
+                      <Link href="/mypage" className="nav-link font-semibold mx-2">マイページ</Link>
+                      <button onClick={handleLogout} className="nav-link font-semibold mx-2">ログアウト</button>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" className="nav-link font-semibold">ログイン</Link>
-                      <Link href="/register" className="nav-link font-semibold">会員登録</Link>
+                      <Link href="/login" className="nav-link font-semibold mx-2">ログイン</Link>
+                      <Link href="/register" className="nav-link font-semibold mx-2">会員登録</Link>
                     </>
                   )}
                 </div>
