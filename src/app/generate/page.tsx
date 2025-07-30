@@ -206,8 +206,7 @@ export default function GeneratePage() {
 
             {hasIngo && (
               <div className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded">
-                <strong>院号について:</strong> 院号は、故人の情報（趣味・特技・人柄など）から最適なものを自動生成いたします。
-                生成される法名の形式: 〇〇院釋〇〇{gender === 'female' ? '（女性の場合は〇〇院釋尼〇〇）' : ''}
+                <strong>院号について:</strong> 院号は、〇〇院釋〇〇{gender === 'female' ? '（女性の場合は〇〇院釋尼〇〇）' : ''}となります。
               </div>
             )}
 

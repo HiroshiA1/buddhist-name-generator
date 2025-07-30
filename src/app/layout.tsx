@@ -73,17 +73,17 @@ export default function RootLayout({
                   />
                 </Link>
                 <div className="flex items-center">
-                  <Link href="/" className="nav-link font-semibold mx-2">ホーム</Link>
+                  <Link href="/" className="nav-link font-semibold" style={{ margin: '0 8px' }}>ホーム</Link>
                   {user ? (
                     <>
-                      <Link href="/generate" className="nav-link font-semibold mx-2">法名生成</Link>
-                      <Link href="/mypage" className="nav-link font-semibold mx-2">マイページ</Link>
-                      <button onClick={handleLogout} className="nav-link font-semibold mx-2">ログアウト</button>
+                      <Link href="/generate" className="nav-link font-semibold" style={{ margin: '0 8px' }}>法名生成</Link>
+                      <Link href="/mypage" className="nav-link font-semibold" style={{ margin: '0 8px' }}>マイページ</Link>
+                      <button onClick={handleLogout} className="nav-link font-semibold" style={{ margin: '0 8px' }}>ログアウト</button>
                     </>
                   ) : (
                     <>
-                      <Link href="/login" className="nav-link font-semibold mx-2">ログイン</Link>
-                      <Link href="/register" className="nav-link font-semibold mx-2">会員登録</Link>
+                      <Link href="/login" className="nav-link font-semibold" style={{ margin: '0 8px' }}>ログイン</Link>
+                      <Link href="/register" className="nav-link font-semibold" style={{ margin: '0 8px' }}>会員登録</Link>
                     </>
                   )}
                 </div>
