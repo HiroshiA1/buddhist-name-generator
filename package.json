@@ -10,13 +10,17 @@
     "vercel-build": "next build"
   },
   "dependencies": {
+    "@stripe/stripe-js": "^7.7.0",
     "@supabase/supabase-js": "^2.52.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.526.0",
     "next": "15.4.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "stripe": "^18.3.0",
     "tailwind-merge": "^3.3.1"
   },
   "devDependencies": {

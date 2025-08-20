@@ -60,6 +60,9 @@ export default function RootLayout({
 
   return (
     <html lang="ja">
+      <head>
+        <link rel="icon" href="/buddhist-name-gene_fabicon.png" type="image/png" />
+      </head>
       <body className={`${notoSerifJP.className} bg-[#faf8f4] text-[#1f2937]`}>
         {!isAuthPage && (
           <nav className="bg-white shadow-sm border-b border-gray-200">

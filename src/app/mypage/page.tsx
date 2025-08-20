@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
+import { exportToPDF } from '@/lib/pdfExport'
 
 interface GenerationHistoryItem {
   id: string;
@@ -27,34 +28,54 @@ interface GenerationHistoryItem {
   created_at: string;
 }
 
+
 export default function MyPage() {
   const [history, setHistory] = useState<GenerationHistoryItem[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
+  const handleExportPDF = (item: GenerationHistoryItem) => {
+
+    const exportData = {
+      firstName: item.input_data.firstName,
+      gender: item.input_data.gender,
+      hasIngo: item.input_data.hasIngo,
+      hobbies: item.input_data.hobbies,
+      skills: item.input_data.skills,
+      personality: item.input_data.personality,
+      customCharacter: item.input_data.customCharacter,
+      generatedNames: item.generated_names,
+      createdAt: new Date(item.created_at).toLocaleString('ja-JP')
+    }
+
+    exportToPDF(exportData)
+  }
+
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchUserData = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
         router.push('/login')
         return
       }
 
-      const { data, error } = await supabase
+      // 履歴の取得
+      const { data: historyData, error: historyError } = await supabase
         .from('generation_history')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
-      if (error) {
-        console.error('履歴の取得エラー:', error.message)
+      if (historyError) {
+        console.error('履歴の取得エラー:', historyError.message)
       } else {
-        setHistory(data || [])
+        setHistory(historyData || [])
       }
+
       setLoading(false)
     }
 
-    fetchHistory()
+    fetchUserData()
   }, [router])
 
   if (loading) {
@@ -71,6 +92,7 @@ export default function MyPage() {
         <div className="card fade-in" style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <h2 className="h2 text-center" style={{ marginBottom: 'var(--spacing-xl)' }}>マイページ</h2>
 
+
           {history.length === 0 ? (
             <div className="text-center" style={{ padding: 'var(--spacing-2xl)', color: 'var(--color-text-secondary)' }}>
               <p>まだ生成履歴がありません。</p>
@@ -82,8 +104,20 @@ export default function MyPage() {
             <div className="space-y-8">
               {history.map((item) => (
                 <div key={item.id} className="card" style={{ padding: 'var(--spacing-xl)' }}>
-                  <div style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-                    生成日時: {new Date(item.created_at).toLocaleString()}
+                  <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+                      生成日時: {new Date(item.created_at).toLocaleString()}
+                    </div>
+                    <button
+                      className="btn btn-sm btn-secondary"
+                      onClick={() => handleExportPDF(item)}
+                      style={{ 
+                        fontSize: '0.8rem',
+                        padding: '0.25rem 0.5rem'
+                      }}
+                    >
+                      📄 PDF
+                    </button>
                   </div>
                   
                   <h3 className="h3" style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-charcoal)' }}>入力情報</h3>
