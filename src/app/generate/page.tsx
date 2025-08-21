@@ -4,26 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { exportToPDF } from '@/lib/pdfExport'
-
-interface GenerationRequest {
-  firstName: string;
-  gender: 'male' | 'female';
-  hasIngo: boolean;
-  hobbies: string[];
-  skills: string[];
-  personality: string;
-  customCharacter?: string;
-}
-
-interface GenerationResponse {
-  suggestions: Array<{
-    name: string;
-    reading: string;
-    meaning: string;
-    reasoning: string;
-    buddhistContext: string;
-  }>;
-}
+import NameCard from '@/components/Generate/NameCard'
+import LoadingSpinner from '@/components/Common/LoadingSpinner'
+import { GenerationRequest, GenerationResponse, GeneratedName } from '@/types'
 
 export default function GeneratePage() {
   const [name, setName] = useState('')
@@ -34,7 +17,7 @@ export default function GeneratePage() {
   const [personality, setPersonality] = useState('')
   const [customCharacter, setCustomCharacter] = useState('')
   const [loading, setLoading] = useState(false)
-  const [generatedNames, setGeneratedNames] = useState<GenerationResponse['suggestions']>([])
+  const [generatedNames, setGeneratedNames] = useState<GeneratedName[]>([])
   const [user, setUser] = useState<unknown>(null)
   
   // バリデーション状態

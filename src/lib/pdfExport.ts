@@ -1,24 +1,5 @@
 import jsPDF from 'jspdf'
-
-interface GeneratedName {
-  name: string;
-  reading: string;
-  meaning: string;
-  reasoning: string;
-  buddhistContext: string;
-}
-
-interface ExportData {
-  firstName: string;
-  gender: 'male' | 'female';
-  hasIngo: boolean;
-  hobbies?: string[];
-  skills?: string[];
-  personality?: string;
-  customCharacter?: string;
-  generatedNames: GeneratedName[];
-  createdAt?: string;
-}
+import { ExportData } from '@/types'
 
 export const exportToPDF = (data: ExportData): void => {
   // jsPDFインスタンス作成（A4サイズ）
