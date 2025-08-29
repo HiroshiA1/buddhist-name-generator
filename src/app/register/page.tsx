@@ -50,9 +50,9 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center" style={{ padding: 'var(--spacing-lg)' }}>
+    <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg)', padding: 'var(--s-6)' }}>
       <div className="card fade-in" style={{ width: '100%', maxWidth: '400px' }}>
-        <h2 className="h2 text-center" style={{ marginBottom: 'var(--spacing-xl)' }}>新規会員登録</h2>
+        <h2 className="h2 text-center" style={{ marginBottom: 'var(--s-8)' }}>新規会員登録</h2>
         <form onSubmit={handleRegister} className="space-y-6">
           <div className="form-group">
             <label htmlFor="email" className="form-label">メールアドレス</label>
@@ -78,15 +78,16 @@ export default function RegisterPage() {
               required
               minLength={8}
             />
+            <p className="help-text">パスワードは8文字以上で設定してください</p>
           </div>
-          <div className="flex items-center justify-between" style={{ marginTop: 'var(--spacing-xl)' }}>
+          <div className="flex items-center justify-between" style={{ marginTop: 'var(--s-8)' }}>
             <button
               type="submit"
               className="btn btn-primary"
             >
               登録
             </button>
-            <a href="/login" className="nav-link">
+            <a href="/login" className="nav-link" style={{ minHeight: 'auto' }}>
               ログインはこちら
             </a>
           </div>

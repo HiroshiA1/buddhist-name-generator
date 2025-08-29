@@ -37,9 +37,9 @@ export default function Navigation() {
   if (loading || isAuthPage) return null
 
   return (
-    <nav className="bg-white shadow-sm border-b border-gray-200">
-      <div className="container mx-auto px-4">
-        <div className="flex justify-between items-center h-16">
+    <nav className="header">
+      <div className="container">
+        <div className="flex justify-between items-center" style={{ minHeight: '64px' }}>
           <Link href="/" className="flex items-center">
             <img 
               src="/buddhist-name-gene_logo_hori.png" 
@@ -47,18 +47,18 @@ export default function Navigation() {
               className="h-10 w-auto"
             />
           </Link>
-          <div className="flex items-center">
-            <Link href="/" className="nav-link font-semibold" style={{ margin: '0 8px' }}>ホーム</Link>
+          <div className="flex items-center nav-container">
+            <Link href="/" className="nav-link">ホーム</Link>
             {user ? (
               <>
-                <Link href="/generate" className="nav-link font-semibold" style={{ margin: '0 8px' }}>法名生成</Link>
-                <Link href="/mypage" className="nav-link font-semibold" style={{ margin: '0 8px' }}>マイページ</Link>
-                <button onClick={handleLogout} className="nav-link font-semibold" style={{ margin: '0 8px' }}>ログアウト</button>
+                <Link href="/generate" className="nav-link">法名生成</Link>
+                <Link href="/mypage" className="nav-link">マイページ</Link>
+                <button onClick={handleLogout} className="nav-link">ログアウト</button>
               </>
             ) : (
               <>
-                <Link href="/login" className="nav-link font-semibold" style={{ margin: '0 8px' }}>ログイン</Link>
-                <Link href="/register" className="nav-link font-semibold" style={{ margin: '0 8px' }}>会員登録</Link>
+                <Link href="/login" className="nav-link">ログイン</Link>
+                <Link href="/register" className="nav-link">会員登録</Link>
               </>
             )}
           </div>

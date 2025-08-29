@@ -4,9 +4,15 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { exportToPDF } from '@/lib/pdfExport'
-import NameCard from '@/components/Generate/NameCard'
 import LoadingSpinner from '@/components/Common/LoadingSpinner'
 import { GenerationRequest, GenerationResponse, GeneratedName } from '@/types'
+
+// 新しいUIコンポーネントのインポート
+import Button from '@/components/UI/Button'
+import Input from '@/components/UI/Input'
+import Card from '@/components/UI/Card'
+import Modal from '@/components/UI/Modal'
+import Tooltip from '@/components/UI/Tooltip'
 
 export default function GeneratePage() {
   const [name, setName] = useState('')
@@ -19,18 +25,13 @@ export default function GeneratePage() {
   const [loading, setLoading] = useState(false)
   const [generatedNames, setGeneratedNames] = useState<GeneratedName[]>([])
   const [user, setUser] = useState<unknown>(null)
+  const [showExportModal, setShowExportModal] = useState(false)
   
   // バリデーション状態
   const [errors, setErrors] = useState<{
     name?: string;
     personality?: string;
     customCharacter?: string;
-  }>({})
-  
-  const [touched, setTouched] = useState<{
-    name?: boolean;
-    personality?: boolean;
-    customCharacter?: boolean;
   }>({})
   
   const router = useRouter()
@@ -47,407 +48,320 @@ export default function GeneratePage() {
     checkAuth()
   }, [router])
 
-  // バリデーション関数
-  const validateField = (fieldName: string, value: string) => {
-    const newErrors = { ...errors }
+  const validateForm = () => {
+    const newErrors: typeof errors = {}
     
-    switch (fieldName) {
-      case 'name':
-        if (!value.trim()) {
-          newErrors.name = '故人の名前は必須です'
-        } else if (value.trim().length < 2) {
-          newErrors.name = '名前は2文字以上で入力してください'
-        } else if (value.trim().length > 20) {
-          newErrors.name = '名前は20文字以内で入力してください'
-        } else {
-          delete newErrors.name
-        }
-        break
-        
-      case 'personality':
-        if (value.length > 1000) {
-          newErrors.personality = '1000文字以内で入力してください'
-        } else {
-          delete newErrors.personality
-        }
-        break
-        
-      case 'customCharacter':
-        if (value && value.length > 1) {
-          newErrors.customCharacter = '1文字のみ入力してください'
-        } else if (value && !/^[\u4E00-\u9FAF\u3040-\u3096\u30A0-\u30FC]$/.test(value)) {
-          newErrors.customCharacter = '日本語の文字を入力してください'
-        } else {
-          delete newErrors.customCharacter
-        }
-        break
+    if (!name.trim()) {
+      newErrors.name = '故人の名前を入力してください'
+    }
+    
+    if (personality && personality.length > 500) {
+      newErrors.personality = '性格・人柄は500文字以内で入力してください'
+    }
+    
+    if (customCharacter && !/^[一-龯]{0,1}$/.test(customCharacter)) {
+      newErrors.customCharacter = '漢字1文字を入力してください'
     }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  // フィールドがタッチされたときの処理
-  const handleFieldBlur = (fieldName: string) => {
-    setTouched({ ...touched, [fieldName]: true })
-  }
-
-  // 入力変更時の処理
-  const handleFieldChange = (fieldName: string, value: string) => {
-    // 値を更新
-    switch (fieldName) {
-      case 'name':
-        setName(value)
-        break
-      case 'personality':
-        setPersonality(value)
-        break
-      case 'customCharacter':
-        setCustomCharacter(value)
-        break
-    }
-
-    // タッチされている場合はリアルタイムバリデーション
-    if (touched[fieldName as keyof typeof touched]) {
-      validateField(fieldName, value)
-    }
-  }
-
-  // フォーム送信時の全体バリデーション
-  const validateForm = () => {
-    const isNameValid = validateField('name', name)
-    const isPersonalityValid = validateField('personality', personality)
-    const isCustomCharacterValid = validateField('customCharacter', customCharacter)
+  const handleGenerate = async () => {
+    if (!validateForm()) return
     
-    // すべてのフィールドをtouchedにする
-    setTouched({
-      name: true,
-      personality: true,
-      customCharacter: true
-    })
-    
-    return isNameValid && isPersonalityValid && isCustomCharacterValid
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div>認証確認中...</div>
-      </div>
-    )
-  }
-
-  const handleGenerate = async (e: React.FormEvent) => {
-    e.preventDefault()
     setLoading(true)
     setGeneratedNames([])
-
-    // フォーム全体のバリデーション
-    if (!validateForm()) {
-      setLoading(false)
-      return
-    }
-
+    
     try {
-      const requestBody: GenerationRequest = {
+      const requestData: GenerationRequest = {
         firstName: name,
         gender,
         hasIngo,
-        hobbies: hobbies.split(',').map(s => s.trim()).filter(s => s),
-        skills: skills.split(',').map(s => s.trim()).filter(s => s),
+        hobbies: hobbies.split('、').filter(h => h.trim()),
+        skills: skills.split('、').filter(s => s.trim()),
         personality,
-        ...(customCharacter && customCharacter.length === 1 && { customCharacter }),
+        customCharacter
       }
 
-      const { data, error: functionError } = await supabase.functions.invoke('generate-homyo', {
-        body: requestBody
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestData)
       })
 
-      if (functionError) {
-        console.error('Function error:', functionError)
-        throw new Error(functionError.message || '法名生成に失敗しました。')
+      if (!response.ok) {
+        throw new Error('生成に失敗しました')
       }
 
-      if (!data) {
-        throw new Error('法名データの取得に失敗しました。')
-      }
+      const data: GenerationResponse = await response.json()
       setGeneratedNames(data.suggestions)
-
-      const { data: { user } } = await supabase.auth.getUser()
+      
+      // 履歴を保存
       if (user) {
-        const { error: insertError } = await supabase
-          .from('generation_history')
-          .insert({
-            user_id: user.id,
-            input_data: requestBody,
-            generated_names: data.suggestions,
-          })
-        if (insertError) {
-          console.error('履歴保存エラー:', insertError.message)
-        }
+        await supabase.from('generation_history').insert({
+          user_id: (user as any).id,
+          input_data: requestData,
+          generated_names: data.suggestions
+        })
       }
-
-    } catch (error: unknown) {
-      console.error('法名生成エラー:', error)
-      
-      let errorMessage = '法名生成中にエラーが発生しました。'
-      
-      if (error instanceof Error && error.message?.includes('quota')) {
-        errorMessage = 'API利用制限に達しました。しばらく時間をおいてからお試しください。'
-      } else if (error instanceof Error && error.message?.includes('network')) {
-        errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。'
-      } else if (error instanceof Error && error.message?.includes('GEMINI_API_KEY')) {
-        errorMessage = 'APIキーの設定に問題があります。管理者にお問い合わせください。'
-      } else if (error instanceof Error && error.message) {
-        errorMessage = error.message
-      }
-      
-      alert(errorMessage)
+    } catch (error) {
+      console.error('Error:', error)
+      alert('法名の生成中にエラーが発生しました')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleExportPDF = () => {
-    if (generatedNames.length === 0) {
-      alert('エクスポートする法名案がありません。')
-      return
-    }
-
-    const exportData = {
+  const handleExport = () => {
+    exportToPDF({
       firstName: name,
       gender,
       hasIngo,
-      hobbies: hobbies.split(',').map(s => s.trim()).filter(s => s),
-      skills: skills.split(',').map(s => s.trim()).filter(s => s),
+      hobbies: hobbies.split('、').filter(h => h.trim()),
+      skills: skills.split('、').filter(s => s.trim()),
       personality,
       customCharacter,
       generatedNames,
-      createdAt: new Date().toLocaleString('ja-JP')
-    }
+      createdAt: new Date().toISOString()
+    })
+    setShowExportModal(false)
+  }
 
-    exportToPDF(exportData)
+  if (!user) {
+    return <LoadingSpinner message="認証を確認中..." />
   }
 
   return (
-    <div className="min-h-screen" style={{ padding: 'var(--spacing-xl) 0' }}>
+    <main className="min-h-screen bg-[var(--bg)] py-12">
       <div className="container">
-        <div className="card fade-in" style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <h2 className="h2 text-center" style={{ marginBottom: 'var(--spacing-xl)' }}>法名生成</h2>
-          <form onSubmit={handleGenerate} className="space-y-8">
-            <div className="form-group">
-              <label htmlFor="name" className="form-label required">故人の名前（俗名）</label>
-              <input
-                type="text"
-                id="name"
-                className={`input ${errors.name && touched.name ? 'input-error' : ''} ${!errors.name && touched.name && name ? 'input-success' : ''}`}
-                placeholder="例: 田中太郎"
-                value={name}
-                onChange={(e) => handleFieldChange('name', e.target.value)}
-                onBlur={() => handleFieldBlur('name')}
-                required
-              />
-              {errors.name && touched.name && (
-                <div className="error-message">
-                  ⚠️ {errors.name}
-                </div>
-              )}
-              {!errors.name && touched.name && name && (
-                <div className="success-message">
-                  ✓ 入力完了
-                </div>
-              )}
-              <div className="help-text">
-                故人の俗名（本名）を入力してください。法名生成の基礎となります。
-              </div>
-            </div>
+        <div className="max-w-4xl mx-auto space-y-8">
+          {/* ヘッダー */}
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl font-bold text-[var(--text)]">
+              法名生成
+            </h1>
+            <p className="text-lg text-[var(--text-secondary)]">
+              故人の情報を入力して、ふさわしい法名を生成します
+            </p>
+          </div>
 
-            <div className="form-group">
-              <label className="form-label">性別</label>
-              <div className="radio-group">
-                <label className="radio-item">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="male"
-                    checked={gender === 'male'}
-                    onChange={() => setGender('male' as const)}
-                    style={{ accentColor: 'var(--color-sand-beige)' }}
-                  />
-                  <span>男性</span>
-                </label>
-                <label className="radio-item">
-                  <input
-                    type="radio"
-                    name="gender"
-                    value="female"
-                    checked={gender === 'female'}
-                    onChange={() => setGender('female' as const)}
-                    style={{ accentColor: 'var(--color-sand-beige)' }}
-                  />
-                  <span>女性</span>
-                </label>
-              </div>
-            </div>
+          {/* 入力フォーム */}
+          <Card variant="elevated" padding="lg">
+            <form onSubmit={(e) => { e.preventDefault(); handleGenerate(); }} className="space-y-6">
+              {/* 基本情報 */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-[var(--text)]">基本情報</h2>
+                
+                <Input
+                  label="故人の名前"
+                  placeholder="山田太郎"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  error={errors.name}
+                  showRequired
+                />
 
-            <div className="form-group">
-              <label className="form-label">院号の有無</label>
-              <div className="radio-group">
-                <label className="radio-item">
-                  <input
-                    type="radio"
-                    name="hasIngo"
-                    value="true"
-                    checked={hasIngo === true}
-                    onChange={() => setHasIngo(true)}
-                    style={{ accentColor: 'var(--color-sand-beige)' }}
-                  />
-                  <span>あり</span>
-                </label>
-                <label className="radio-item">
-                  <input
-                    type="radio"
-                    name="hasIngo"
-                    value="false"
-                    checked={hasIngo === false}
-                    onChange={() => setHasIngo(false)}
-                    style={{ accentColor: 'var(--color-sand-beige)' }}
-                  />
-                  <span>なし</span>
-                </label>
-              </div>
-            </div>
-
-            {hasIngo && (
-              <div className="text-sm text-gray-600 mt-2 p-3 bg-blue-50 rounded">
-                <strong>院号について:</strong> 院号は、〇〇院釋〇〇{gender === 'female' ? '（女性の場合は〇〇院釋尼〇〇）' : ''}となります。
-              </div>
-            )}
-
-            <div className="form-group">
-              <label htmlFor="hobbies" className="form-label">趣味（複数入力可、カンマ区切り）</label>
-              <input
-                type="text"
-                id="hobbies"
-                className="input"
-                placeholder="例: 読書, 写真, 園芸"
-                value={hobbies}
-                onChange={(e) => setHobbies(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="skills" className="form-label">特技（複数入力可、カンマ区切り）</label>
-              <input
-                type="text"
-                id="skills"
-                className="input"
-                placeholder="例: 囲碁, 料理, 書道"
-                value={skills}
-                onChange={(e) => setSkills(e.target.value)}
-              />
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="personality" className="form-label">人柄や人生に関する自由記述</label>
-              <div style={{ position: 'relative' }}>
-                <textarea
-                  id="personality"
-                  className={`input textarea ${errors.personality && touched.personality ? 'input-error' : ''}`}
-                  placeholder="例: 優しく思いやりのある人で、家族を大切にしていました。地域の活動にも積極的に参加し、多くの人に慕われていました。"
-                  value={personality}
-                  onChange={(e) => handleFieldChange('personality', e.target.value)}
-                  onBlur={() => handleFieldBlur('personality')}
-                  maxLength={1000}
-                ></textarea>
-                <div 
-                  className={`character-count ${personality.length > 800 ? 'warning' : ''} ${personality.length > 950 ? 'error' : ''}`}
-                >
-                  {personality.length}/1000
-                </div>
-              </div>
-              {errors.personality && touched.personality && (
-                <div className="error-message">
-                  ⚠️ {errors.personality}
-                </div>
-              )}
-              <div className="help-text">
-                故人の人柄、趣向、人生エピソードなどを詳しく記入することで、より適切な法名が生成されます。
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="customCharacter" className="form-label">俗名から含めたい漢字（任意）</label>
-              <input
-                type="text"
-                id="customCharacter"
-                className={`input ${errors.customCharacter && touched.customCharacter ? 'input-error' : ''} ${!errors.customCharacter && touched.customCharacter && customCharacter ? 'input-success' : ''}`}
-                placeholder="例: 太郎の「太」を含めたい場合は「太」と入力"
-                value={customCharacter}
-                onChange={(e) => handleFieldChange('customCharacter', e.target.value)}
-                onBlur={() => handleFieldBlur('customCharacter')}
-                maxLength={1}
-              />
-              {errors.customCharacter && touched.customCharacter && (
-                <div className="error-message">
-                  ⚠️ {errors.customCharacter}
-                </div>
-              )}
-              {!errors.customCharacter && touched.customCharacter && customCharacter && (
-                <div className="success-message">
-                  ✓ 「{customCharacter}」を法名に含めます
-                </div>
-              )}
-              <div className="help-text">
-                俗名の中で法名に含めたい漢字があれば1文字入力してください。ひらがなでも入力可能です。
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className={`btn btn-primary ${loading ? 'loading' : ''} ${Object.keys(errors).length > 0 ? 'btn-disabled' : ''}`}
-              style={{ width: '100%', position: 'relative' }}
-              disabled={loading || Object.keys(errors).length > 0 || !name.trim()}
-            >
-              {loading ? '生成中...' : Object.keys(errors).length > 0 ? '入力内容を確認してください' : '法名を生成する'}
-            </button>
-            {Object.keys(errors).length > 0 && (
-              <div className="text-center mt-2">
-                <div className="error-message" style={{ justifyContent: 'center' }}>
-                  ⚠️ 入力エラーがあります。上記のエラーを修正してください。
-                </div>
-              </div>
-            )}
-          </form>
-
-
-          {generatedNames.length > 0 && (
-            <div style={{ marginTop: 'var(--spacing-2xl)' }}>
-              <div className="mobile-stack" style={{ marginBottom: 'var(--spacing-xl)' }}>
-                <h3 className="h2 text-center mobile-full-width">生成された法名案</h3>
-                <button
-                  className="btn btn-mobile btn-secondary"
-                  onClick={handleExportPDF}
-                >
-                  📄 PDFエクスポート
-                </button>
-              </div>
-              <div className="space-y-8">
-                {generatedNames.map((suggestion, index) => (
-                  <div key={index} className="result-card fade-in">
-                    <h4 className="result-title">{suggestion.name} ({suggestion.reading})</h4>
-                    <div className="space-y-4" style={{ color: 'var(--color-text-secondary)' }}>
-                      <p><strong>意味:</strong> {suggestion.meaning}</p>
-                      <p><strong>選定理由:</strong> {suggestion.reasoning}</p>
-                      <p><strong>仏教的背景:</strong> {suggestion.buddhistContext}</p>
-                    </div>
+                {/* 性別選択 */}
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--text)]">
+                    性別 <span className="text-[var(--danger)]">*</span>
+                  </label>
+                  <div className="flex gap-4" role="radiogroup">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="male"
+                        checked={gender === 'male'}
+                        onChange={(e) => setGender(e.target.value as 'male' | 'female')}
+                        className="w-4 h-4 text-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]"
+                      />
+                      <span className="text-[var(--text)]">男性</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name="gender"
+                        value="female"
+                        checked={gender === 'female'}
+                        onChange={(e) => setGender(e.target.value as 'male' | 'female')}
+                        className="w-4 h-4 text-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]"
+                      />
+                      <span className="text-[var(--text)]">女性</span>
+                    </label>
                   </div>
+                </div>
+
+                {/* 院号 */}
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="hasIngo"
+                    checked={hasIngo}
+                    onChange={(e) => setHasIngo(e.target.checked)}
+                    className="w-4 h-4 text-[var(--brand)] rounded focus:ring-2 focus:ring-[var(--brand)]"
+                  />
+                  <label htmlFor="hasIngo" className="text-[var(--text)] cursor-pointer">
+                    院号を含める
+                  </label>
+                  <Tooltip content="院号は特に功績のあった方に付けられる称号です">
+                    <button
+                      type="button"
+                      className="text-[var(--muted)] hover:text-[var(--text)]"
+                      aria-label="院号の説明"
+                    >
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                      </svg>
+                    </button>
+                  </Tooltip>
+                </div>
+              </div>
+
+              {/* 詳細情報 */}
+              <div className="space-y-4">
+                <h2 className="text-xl font-semibold text-[var(--text)]">詳細情報（任意）</h2>
+                
+                <Input
+                  label="趣味"
+                  placeholder="読書、園芸、釣り（複数ある場合は読点で区切ってください）"
+                  value={hobbies}
+                  onChange={(e) => setHobbies(e.target.value)}
+                  helpText="故人の趣味を入力してください"
+                />
+
+                <Input
+                  label="特技・職業"
+                  placeholder="料理、プログラミング、教師"
+                  value={skills}
+                  onChange={(e) => setSkills(e.target.value)}
+                  helpText="故人の特技や職業を入力してください"
+                />
+
+                <div>
+                  <label className="block mb-2 text-sm font-medium text-[var(--text)]">
+                    性格・人柄
+                  </label>
+                  <textarea
+                    className="w-full min-h-[120px] px-4 py-2.5 bg-[var(--panel)] text-[var(--text)] border border-[var(--border)] rounded-lg resize-vertical focus:border-[var(--brand)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand)] focus-visible:ring-offset-2"
+                    placeholder="温厚で思いやりがあり、いつも家族のことを第一に考える人でした..."
+                    value={personality}
+                    onChange={(e) => setPersonality(e.target.value)}
+                    maxLength={500}
+                  />
+                  <div className="mt-1 text-sm text-[var(--muted)] text-right">
+                    {personality.length}/500
+                  </div>
+                  {errors.personality && (
+                    <p className="mt-2 text-sm text-[var(--danger)]">{errors.personality}</p>
+                  )}
+                </div>
+
+                <Input
+                  label="希望する文字"
+                  placeholder="慈"
+                  value={customCharacter}
+                  onChange={(e) => setCustomCharacter(e.target.value)}
+                  error={errors.customCharacter}
+                  helpText="法名に含めたい漢字を1文字入力してください"
+                  maxLength={1}
+                />
+              </div>
+
+              {/* 生成ボタン */}
+              <div className="flex justify-center pt-4">
+                <Button
+                  type="submit"
+                  size="lg"
+                  isLoading={loading}
+                  disabled={loading || !name.trim()}
+                  className="min-w-[200px]"
+                >
+                  法名を生成する
+                </Button>
+              </div>
+            </form>
+          </Card>
+
+          {/* 生成結果 */}
+          {generatedNames.length > 0 && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold text-[var(--text)]">生成された法名</h2>
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowExportModal(true)}
+                  leftIcon={
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                  }
+                >
+                  PDFで保存
+                </Button>
+              </div>
+
+              <div className="grid gap-6 md:grid-cols-2">
+                {generatedNames.map((suggestion, index) => (
+                  <Card key={index} variant="elevated" hoverable>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-sm text-[var(--muted)] mb-2">
+                          法名案 {index + 1}
+                        </div>
+                        <div className="text-3xl font-bold text-[var(--text)] tracking-wider mb-1">
+                          {suggestion.name}
+                        </div>
+                        <div className="text-lg text-[var(--text-secondary)]">
+                          {suggestion.reading}
+                        </div>
+                      </div>
+
+                      <div className="space-y-3 pt-4 border-t border-[var(--border)]">
+                        <div>
+                          <h4 className="text-sm font-medium text-[var(--muted)] mb-1">意味</h4>
+                          <p className="text-[var(--text)]">{suggestion.meaning}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-[var(--muted)] mb-1">選定理由</h4>
+                          <p className="text-[var(--text)]">{suggestion.reasoning}</p>
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-medium text-[var(--muted)] mb-1">仏教的背景</h4>
+                          <p className="text-[var(--text)]">{suggestion.buddhistContext}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
                 ))}
               </div>
             </div>
           )}
         </div>
       </div>
-    </div>
+
+      {/* PDFエクスポートモーダル */}
+      <Modal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        title="PDFで保存"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <Button variant="ghost" onClick={() => setShowExportModal(false)}>
+              キャンセル
+            </Button>
+            <Button onClick={handleExport}>
+              ダウンロード
+            </Button>
+          </div>
+        }
+      >
+        <p className="text-[var(--text)]">
+          生成された法名をPDF形式でダウンロードします。
+          印刷や保存にご利用ください。
+        </p>
+      </Modal>
+    </main>
   )
 }

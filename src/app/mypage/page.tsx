@@ -87,41 +87,41 @@ export default function MyPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ padding: 'var(--spacing-xl) 0' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg)', padding: 'var(--s-8) 0' }}>
       <div className="container">
-        <div className="card fade-in" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-          <h2 className="h2 text-center" style={{ marginBottom: 'var(--spacing-xl)' }}>マイページ</h2>
-
+        <div className="fade-in" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+          <h1 className="h1 text-center" style={{ marginBottom: 'var(--s-12)' }}>マイページ</h1>
 
           {history.length === 0 ? (
-            <div className="text-center" style={{ padding: 'var(--spacing-2xl)', color: 'var(--color-text-secondary)' }}>
-              <p>まだ生成履歴がありません。</p>
-              <div style={{ marginTop: 'var(--spacing-lg)' }}>
+            <div className="card text-center" style={{ padding: 'var(--s-12)' }}>
+              <p className="text-secondary" style={{ fontSize: 'var(--fs-lg)', marginBottom: 'var(--s-8)' }}>まだ生成履歴がありません。</p>
+              <div style={{ marginTop: 'var(--s-6)' }}>
                 <Link href="/generate" className="btn btn-primary">法名を生成する</Link>
               </div>
             </div>
           ) : (
             <div className="space-y-8">
               {history.map((item) => (
-                <div key={item.id} className="card" style={{ padding: 'var(--spacing-xl)' }}>
-                  <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-lg)' }}>
-                    <div style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+                <div key={item.id} className="card" style={{ padding: 'var(--s-8)' }}>
+                  <div className="flex justify-between items-center" style={{ marginBottom: 'var(--s-6)' }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: 'var(--fs-sm)' }}>
                       生成日時: {new Date(item.created_at).toLocaleString()}
                     </div>
                     <button
-                      className="btn btn-sm btn-secondary"
+                      className="btn btn-secondary"
                       onClick={() => handleExportPDF(item)}
                       style={{ 
-                        fontSize: '0.8rem',
-                        padding: '0.25rem 0.5rem'
+                        fontSize: 'var(--fs-sm)',
+                        padding: 'var(--s-2) var(--s-4)',
+                        minHeight: '36px'
                       }}
                     >
                       📄 PDF
                     </button>
                   </div>
                   
-                  <h3 className="h3" style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-charcoal)' }}>入力情報</h3>
-                  <div className="space-y-2" style={{ marginBottom: 'var(--spacing-xl)', color: 'var(--color-text-secondary)' }}>
+                  <h3 className="h3" style={{ marginBottom: 'var(--s-6)' }}>入力情報</h3>
+                  <div className="space-y-2" style={{ marginBottom: 'var(--s-8)', color: 'var(--text-secondary)' }}>
                     <div><strong>俗名:</strong> {item.input_data.firstName}</div>
                     <div><strong>性別:</strong> {item.input_data.gender === 'male' ? '男性' : '女性'}</div>
                     <div><strong>院号の有無:</strong> {item.input_data.hasIngo ? 'あり（自動生成）' : 'なし'}</div>
@@ -137,12 +137,12 @@ export default function MyPage() {
                     )}
                   </div>
 
-                  <h3 className="h3" style={{ marginBottom: 'var(--spacing-lg)', color: 'var(--color-charcoal)' }}>生成された法名案</h3>
+                  <h3 className="h3" style={{ marginBottom: 'var(--s-6)' }}>生成された法名案</h3>
                   <div className="space-y-6">
                     {item.generated_names.map((suggestion, idx) => (
                       <div key={idx} className="result-card">
                         <h4 className="result-title">{suggestion.name} ({suggestion.reading})</h4>
-                        <div className="space-y-4" style={{ color: 'var(--color-text-secondary)' }}>
+                        <div className="space-y-4" style={{ color: 'var(--text-secondary)' }}>
                           <p><strong>意味:</strong> {suggestion.meaning}</p>
                           <p><strong>選定理由:</strong> {suggestion.reasoning}</p>
                           <p><strong>仏教的背景:</strong> {suggestion.buddhistContext}</p>
