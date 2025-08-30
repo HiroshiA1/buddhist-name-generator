@@ -99,8 +99,9 @@ export default function GeneratePage() {
       
       // 履歴を保存
       if (user) {
+        const userId = (user as { id: string }).id
         await supabase.from('generation_history').insert({
-          user_id: (user as any).id,
+          user_id: userId,
           input_data: requestData,
           generated_names: data.suggestions
         })

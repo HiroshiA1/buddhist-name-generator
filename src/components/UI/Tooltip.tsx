@@ -23,7 +23,7 @@ export default function Tooltip({
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const triggerRef = useRef<HTMLDivElement>(null)
   const tooltipRef = useRef<HTMLDivElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const calculatePosition = () => {
     if (!triggerRef.current || !tooltipRef.current) return

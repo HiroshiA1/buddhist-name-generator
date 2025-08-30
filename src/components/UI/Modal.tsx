@@ -3,7 +3,6 @@
 import { useEffect, useRef, ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
-import Button from './Button'
 
 export interface ModalProps {
   isOpen: boolean
