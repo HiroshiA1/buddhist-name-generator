@@ -215,6 +215,8 @@ export default function GeneratePage() {
             code: insertError.code,
             details: insertError.details
           })
+          // エラーがあっても法名は生成されているので警告のみ
+          alert('法名の生成は完了しましたが、履歴の保存に失敗しました。マイページに表示されない場合があります。')
         } else {
           console.log('履歴保存成功:', insertedData)
         }
