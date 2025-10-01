@@ -20,7 +20,7 @@ export default function Navigation() {
 
     checkAuth()
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: unknown, session: { user: unknown } | null) => {
       setUser(session?.user ?? null)
     })
 
