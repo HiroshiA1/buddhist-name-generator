@@ -3,8 +3,23 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface DebugInfo {
+  user?: { id: string; email?: string } | null;
+  userError?: unknown;
+  historyCount?: number;
+  historyData?: unknown[];
+  historyError?: unknown;
+  testInsertResult?: {
+    success: boolean;
+    data: unknown;
+    error: unknown;
+  };
+  timestamp?: string;
+  error?: string;
+}
+
 export default function DatabaseDebug() {
-  const [debugInfo, setDebugInfo] = useState<any>({})
+  const [debugInfo, setDebugInfo] = useState<DebugInfo>({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

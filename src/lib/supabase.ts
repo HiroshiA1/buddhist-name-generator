@@ -17,7 +17,6 @@ if (!isPlaceholder(supabaseUrl) && !isPlaceholder(supabaseAnonKey)) {
   console.warn('[dev-stub] Using Supabase stub because env is missing or placeholder.')
 
   type User = { id: string } | null
-  type Session = { user: User } | null
 
   const delay = (ms: number) => new Promise((r) => setTimeout(r, ms))
 
