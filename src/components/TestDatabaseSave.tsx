@@ -107,14 +107,14 @@ export default function TestDatabaseSave() {
 
       console.log('Check after save:', { checkData, checkError, count })
 
-      if (!checkError) {
-        setResult(prev => ({
-          ...prev,
+      if (!checkError && result) {
+        setResult({
+          ...result,
           verification: {
             totalCount: count,
             latestData: checkData?.[0]
           }
-        }))
+        })
       }
 
     } catch (error) {
