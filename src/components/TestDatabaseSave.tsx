@@ -3,8 +3,25 @@
 import { useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
+interface TestResult {
+  step: string;
+  error?: unknown;
+  errorDetails?: {
+    message: string;
+    code?: string;
+    details?: unknown;
+    hint?: string;
+  };
+  data?: unknown;
+  message?: string;
+  verification?: {
+    totalCount: number | null;
+    latestData?: unknown;
+  };
+}
+
 export default function TestDatabaseSave() {
-  const [result, setResult] = useState<any>(null)
+  const [result, setResult] = useState<TestResult | null>(null)
   const [loading, setLoading] = useState(false)
 
   const testSave = async () => {

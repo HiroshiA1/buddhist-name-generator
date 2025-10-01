@@ -27,7 +27,7 @@ if (!isPlaceholder(supabaseUrl) && !isPlaceholder(supabaseAnonKey)) {
         await delay(10)
         return { data: { user: { id: 'dev-user' } as User }, error: null }
       },
-      onAuthStateChange(_cb: (_event: unknown, _session: Session) => void) {
+      onAuthStateChange() {
         return { data: { subscription: { unsubscribe() {} } } }
       },
       async signOut() {
@@ -36,7 +36,7 @@ if (!isPlaceholder(supabaseUrl) && !isPlaceholder(supabaseAnonKey)) {
       },
     },
     functions: {
-      async invoke(_name: string, _opts?: unknown) {
+      async invoke() {
         await delay(50)
         return { data: { suggestions: [] }, error: null }
       },
