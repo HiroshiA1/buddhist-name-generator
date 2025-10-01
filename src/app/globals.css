@@ -13,6 +13,15 @@
   --color-text-primary: #2c2c2c;
   --color-text-secondary: #6b6b6b;
   --color-text-muted: #9ca3af;
+
+  /* Legacy color variables (for compatibility) */
+  --bg: #fafaf9;
+  --panel: #ffffff;
+  --text: #2c2c2c;
+  --text-secondary: #6b6b6b;
+  --muted: #9ca3af;
+  --border: rgba(44, 44, 44, 0.08);
+  --brand: #e8dcc6;
   
   /* Spacing System - Wide margins */
   --spacing-xs: 0.5rem;
@@ -22,13 +31,27 @@
   --spacing-xl: 3rem;
   --spacing-2xl: 4rem;
   --spacing-3xl: 6rem;
-  
+
+  /* Legacy spacing variables (for compatibility) */
+  --s-2: 0.5rem;
+  --s-4: 1rem;
+  --s-6: 1.5rem;
+  --s-8: 2rem;
+  --s-12: 3rem;
+  --s-24: 6rem;
+
   /* Typography - Clean sans-serif */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-weight-light: 300;
   --font-weight-normal: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
+
+  /* Legacy font size variables (for compatibility) */
+  --fs-sm: 0.875rem;
+  --fs-base: 1rem;
+  --fs-md: 1.125rem;
+  --fs-lg: 1.25rem;
   
   /* Transitions - 150ms fade */
   --transition-fade: 150ms ease-out;
