@@ -5,6 +5,18 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { exportToPDF } from '@/lib/pdfExport'
+import dynamic from 'next/dynamic'
+
+// デバッグコンポーネントを動的インポート（開発環境のみ）
+const DatabaseDebug = dynamic(() => import('@/components/DatabaseDebug'), {
+  ssr: false,
+  loading: () => null
+})
+
+const TestDatabaseSave = dynamic(() => import('@/components/TestDatabaseSave'), {
+  ssr: false,
+  loading: () => null
+})
 
 interface GenerationHistoryItem {
   id: string;
@@ -34,8 +46,7 @@ export default function MyPage() {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const handleExportPDF = (item: GenerationHistoryItem) => {
-
+  const handleExportPDF = async (item: GenerationHistoryItem) => {
     const exportData = {
       firstName: item.input_data.firstName,
       gender: item.input_data.gender,
@@ -48,7 +59,12 @@ export default function MyPage() {
       createdAt: new Date(item.created_at).toLocaleString('ja-JP')
     }
 
-    exportToPDF(exportData)
+    try {
+      await exportToPDF(exportData)
+    } catch (error) {
+      console.error('PDF出力エラー:', error)
+      alert('PDF出力中にエラーが発生しました。')
+    }
   }
 
   useEffect(() => {
@@ -60,6 +76,7 @@ export default function MyPage() {
       }
 
       // 履歴の取得
+      console.log('Fetching history for user:', user.id)
       const { data: historyData, error: historyError } = await supabase
         .from('generation_history')
         .select('*')
@@ -67,8 +84,14 @@ export default function MyPage() {
         .order('created_at', { ascending: false })
 
       if (historyError) {
-        console.error('履歴の取得エラー:', historyError.message)
+        console.error('履歴の取得エラー:', historyError)
+        console.error('Error details:', {
+          message: historyError.message,
+          code: historyError.code,
+          details: historyError.details
+        })
       } else {
+        console.log('履歴データ取得成功:', historyData)
         setHistory(historyData || [])
       }
 
@@ -129,7 +152,7 @@ export default function MyPage() {
                       <div><strong>趣味:</strong> {item.input_data.hobbies.join(', ')}</div>
                     )}
                     {item.input_data.skills && item.input_data.skills.length > 0 && (
-                      <div><strong>特技:</strong> {item.input_data.skills.join(', ')}</div>
+                      <div><strong>仕事・職業:</strong> {item.input_data.skills.join(', ')}</div>
                     )}
                     <div><strong>人柄:</strong> {item.input_data.personality.substring(0, 100)}{item.input_data.personality.length > 100 ? '...' : ''}</div>
                     {item.input_data.customCharacter && (
@@ -153,6 +176,14 @@ export default function MyPage() {
                 </div>
               ))}
             </div>
+          )}
+
+          {/* デバッグ情報（開発環境のみ） */}
+          {process.env.NODE_ENV === 'development' && (
+            <>
+              <TestDatabaseSave />
+              <DatabaseDebug />
+            </>
           )}
         </div>
       </div>

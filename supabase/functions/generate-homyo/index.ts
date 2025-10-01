@@ -84,14 +84,40 @@ serve(async (req) => {
   }
   if (customCharacter) {
     prompt += "- 俗名から含めたい漢字: " + customCharacter + "\n"
+    prompt += "\n**【指定漢字の配置について】**\n"
+    prompt += "- 指定漢字『" + customCharacter + "』は法名の前半後半で様々なパターンで配置してください\n"
+    prompt += "- 各案で異なる位置（院号部分・法名前半・法名後半）に配置し、バリエーションを作ってください\n"
+    prompt += "- 読み方の自然さと漢字の組み合わせの意味を最優先に配置を決定してください\n"
+    prompt += "- 心地よく読めることと、仏教的な意味の深さを判断軸としてください\n"
   }
 
   const genderSuffix = gender === 'female' ? '釋尼' : '釋'
   
   if (hasIngo) {
     prompt += "\n\n**【重要】院号ありが指定されています。以下の規則を絶対に守ってください:**\n1. 法名は必ず「院号部分 + 院 + " + genderSuffix + " + 法名部分」の構造にする\n2. 例：「慈光院" + genderSuffix + "光徳」「智慧院" + genderSuffix + "真心」\n3. 「釋○○」のような院号なしの形式は絶対に使用禁止\n4. 全ての法名案に例外なく院号を含める\n5. 院号部分は故人の特徴から選ぶ（例：慈光、智慧、福徳、真如、法性など）"
+
+    if (customCharacter) {
+      prompt += "\n\n**【院号での指定漢字配置パターン】**\n"
+      prompt += "指定漢字『" + customCharacter + "』を以下のパターンで配置し、各案で異なる位置に使用:\n"
+      prompt += "- 案1: 院号部分に配置（例：『" + customCharacter + "光院" + genderSuffix + "○○』）\n"
+      prompt += "- 案2: 法名前半に配置（例：『○○院" + genderSuffix + customCharacter + "○』）\n"
+      prompt += "- 案3: 法名後半に配置（例：『○○院" + genderSuffix + "○" + customCharacter + "』）\n"
+      prompt += "- 案4: 院号と法名両方に使用も可（例：『" + customCharacter + "○院" + genderSuffix + customCharacter + "○』）\n"
+      prompt += "- 案5: 他の漢字との組み合わせで新たな意味を生成\n"
+      prompt += "※必ず読み方の美しさと意味の深さを重視して最適な位置を選んでください"
+    }
   } else {
     prompt += "\n\n**院号なしが指定されています。法名は「" + genderSuffix + "○○」の形式で提案してください。**"
+
+    if (customCharacter) {
+      prompt += "\n\n**【法名での指定漢字配置パターン】**\n"
+      prompt += "指定漢字『" + customCharacter + "』を以下のパターンで配置し、各案で異なる位置に使用:\n"
+      prompt += "- 案1: 法名前半に配置（例：『" + genderSuffix + customCharacter + "○』）\n"
+      prompt += "- 案2: 法名後半に配置（例：『" + genderSuffix + "○" + customCharacter + "』）\n"
+      prompt += "- 案3: 他の漢字と組み合わせて新たな熟語を形成\n"
+      prompt += "※『" + genderSuffix + "』の直後に同じ漢字ばかり配置せず、バリエーションを作ってください\n"
+      prompt += "※読み方の自然さと仏教的意味を最重視してください"
+    }
   }
   
   
@@ -154,24 +180,65 @@ serve(async (req) => {
       if (hasIngo && parsedResponse.suggestions) {
         console.log('=== APPLYING INGO FORCE FIX ===')
         console.log('Original suggestions:', JSON.stringify(parsedResponse.suggestions, null, 2))
-        
+
         const ingoTemplates = ['慈光院', '智慧院', '福徳院', '真如院', '法性院', '妙法院']
-        
+
         parsedResponse.suggestions = parsedResponse.suggestions.map((suggestion, index) => {
           // 既に院号がついているかチェック
           if (!suggestion.name.includes('院')) {
-            const ingoName = ingoTemplates[index % ingoTemplates.length]
             const originalName = suggestion.name.replace(/^釋(尼)?/, '')
-            const newName = ingoName + genderSuffix + originalName
-            
-            console.log('Fixing suggestion ' + index + ': ' + suggestion.name + ' -> ' + newName)
-            
-            const readingPrefix = ingoName.toLowerCase() + 'いん' + (genderSuffix === '釋尼' ? 'しゃくに' : 'しゃく')
-            
-            return {
-              ...suggestion,
-              name: newName,
-              reading: suggestion.reading.replace(/^しゃく(に)?/, readingPrefix)
+
+            // 指定漢字がある場合は、元の配置パターンを分析して適切に再配置
+            if (customCharacter && originalName.includes(customCharacter)) {
+              const charPos = originalName.indexOf(customCharacter)
+              const nameLength = originalName.length
+              const relativePos = charPos / nameLength
+
+              // 位置に応じて院号と法名に配分
+              let ingoName, homyoName
+              if (relativePos < 0.33) {
+                // 前方にある場合：院号に配置
+                ingoName = customCharacter + (ingoTemplates[index % ingoTemplates.length]).substring(1)
+                homyoName = originalName.replace(customCharacter, '')
+              } else if (relativePos > 0.66) {
+                // 後方にある場合：そのまま法名に保持
+                ingoName = ingoTemplates[index % ingoTemplates.length]
+                homyoName = originalName
+              } else {
+                // 中央付近：パターンに応じて決定
+                if (index % 2 === 0) {
+                  ingoName = ingoTemplates[index % ingoTemplates.length]
+                  homyoName = originalName
+                } else {
+                  ingoName = (ingoTemplates[index % ingoTemplates.length]).slice(0, -1) + customCharacter + '院'
+                  homyoName = originalName.replace(customCharacter, '慧')
+                }
+              }
+
+              const newName = ingoName + genderSuffix + homyoName
+              console.log('Fixing suggestion ' + index + ' (with custom char): ' + suggestion.name + ' -> ' + newName)
+
+              const readingPrefix = ingoName.toLowerCase().replace('院', 'いん') + (genderSuffix === '釋尼' ? 'しゃくに' : 'しゃく')
+
+              return {
+                ...suggestion,
+                name: newName,
+                reading: suggestion.reading.replace(/^しゃく(に)?/, readingPrefix)
+              }
+            } else {
+              // 指定漢字がない場合は従来通り
+              const ingoName = ingoTemplates[index % ingoTemplates.length]
+              const newName = ingoName + genderSuffix + originalName
+
+              console.log('Fixing suggestion ' + index + ': ' + suggestion.name + ' -> ' + newName)
+
+              const readingPrefix = ingoName.toLowerCase() + 'いん' + (genderSuffix === '釋尼' ? 'しゃくに' : 'しゃく')
+
+              return {
+                ...suggestion,
+                name: newName,
+                reading: suggestion.reading.replace(/^しゃく(に)?/, readingPrefix)
+              }
             }
           }
           return suggestion
