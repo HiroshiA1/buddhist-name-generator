@@ -13,7 +13,7 @@ interface DebugInfo {
     success: boolean;
     data: unknown;
     error: unknown;
-  };
+  } | null;
   timestamp?: string;
   error?: string;
 }
