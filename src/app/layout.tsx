@@ -11,13 +11,35 @@ const notoSerifJP = Noto_Serif_JP({
 })
 
 export const metadata: Metadata = {
-  title: '法名ジェネレーター',
-  description: '故人の情報から適切な法名を生成するサービス',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://buddhist-name-generator.vercel.app'),
+  title: '法名ジェネレーター | 浄土真宗の法名を自動生成',
+  description: '故人の人柄や人生を反映した、浄土真宗の教義に基づいた法名を自動生成します。AIが故人の情報から適切な法名案を提案します。',
+  keywords: ['法名', '浄土真宗', '仏教', '法名生成', '院号', '戒名', '釋'],
+  authors: [{ name: '法名ジェネレーター' }],
   icons: {
     icon: '/buddhist-name-gene_fabicon.png',
   },
   openGraph: {
-    images: ['/buddhist-name-gene_fabicon.png'],
+    title: '法名ジェネレーター | 浄土真宗の法名を自動生成',
+    description: '故人の人柄や人生を反映した、浄土真宗の教義に基づいた法名を自動生成します。',
+    url: '/',
+    siteName: '法名ジェネレーター',
+    images: [
+      {
+        url: '/ogp-image.png',
+        width: 1200,
+        height: 630,
+        alt: '法名ジェネレーター',
+      },
+    ],
+    locale: 'ja_JP',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '法名ジェネレーター | 浄土真宗の法名を自動生成',
+    description: '故人の人柄や人生を反映した、浄土真宗の教義に基づいた法名を自動生成します。',
+    images: ['/ogp-image.png'],
   },
 }
 
