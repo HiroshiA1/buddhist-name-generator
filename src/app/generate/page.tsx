@@ -190,36 +190,54 @@ export default function GeneratePage() {
       }
       setGeneratedNames(data.suggestions)
 
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        console.log('Saving history for user:', user.id)
-        console.log('Data to save:', {
-          user_id: user.id,
+      // 履歴保存処理を強化
+      const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
+
+      if (userError) {
+        console.error('ユーザー取得エラー:', userError)
+      } else if (currentUser) {
+        console.log('=== 履歴保存開始 ===')
+        console.log('User ID:', currentUser.id)
+        console.log('User Email:', currentUser.email)
+
+        const historyData = {
+          user_id: currentUser.id,
           input_data: requestBody,
-          generated_names: data.suggestions
-        })
+          generated_names: data.suggestions,
+        }
+
+        console.log('保存するデータ:', JSON.stringify(historyData, null, 2))
 
         const { data: insertedData, error: insertError } = await supabase
           .from('generation_history')
-          .insert({
-            user_id: user.id,
-            input_data: requestBody,
-            generated_names: data.suggestions,
-          })
+          .insert(historyData)
           .select()
 
         if (insertError) {
-          console.error('履歴保存エラー:', insertError)
+          console.error('❌ 履歴保存エラー:', insertError)
           console.error('Error details:', {
             message: insertError.message,
             code: insertError.code,
-            details: insertError.details
+            details: insertError.details,
+            hint: insertError.hint
           })
-          // エラーがあっても法名は生成されているので警告のみ
-          alert('法名の生成は完了しましたが、履歴の保存に失敗しました。マイページに表示されない場合があります。')
+
+          // エラーメッセージを詳細に表示
+          let errorMsg = `履歴保存エラー: ${insertError.message}`
+          if (insertError.code) {
+            errorMsg += `\nエラーコード: ${insertError.code}`
+          }
+          if (insertError.hint) {
+            errorMsg += `\nヒント: ${insertError.hint}`
+          }
+          alert(`法名の生成は完了しましたが、履歴の保存に失敗しました。\n\n${errorMsg}\n\nマイページに表示されない場合があります。`)
         } else {
-          console.log('履歴保存成功:', insertedData)
+          console.log('✅ 履歴保存成功!')
+          console.log('保存されたデータ:', insertedData)
+          console.log('=== 履歴保存完了 ===')
         }
+      } else {
+        console.warn('⚠️ ユーザーが見つかりません。履歴は保存されません。')
       }
 
     } catch (error: unknown) {
