@@ -5,9 +5,7 @@ import { ExportData } from '@/types'
 export const exportToPDF = async (data: ExportData): Promise<void> => {
   const pdf = new jsPDF('p', 'mm', 'a4')
   const pageWidth = 210 // A4幅（mm）
-  const pageHeight = 297 // A4高さ（mm）
   const margin = 20
-  let currentPage = 0
 
   const createdAt = data.createdAt || new Date().toLocaleString('ja-JP')
 
@@ -56,7 +54,6 @@ export const exportToPDF = async (data: ExportData): Promise<void> => {
     const headerImgHeight = (headerCanvas.height * (pageWidth - margin * 2)) / headerCanvas.width
     const headerImgData = headerCanvas.toDataURL('image/jpeg', 0.95)
     pdf.addImage(headerImgData, 'JPEG', margin, margin, pageWidth - margin * 2, headerImgHeight)
-    currentPage++
 
     // 各法名案を個別ページとして作成
     for (let i = 0; i < data.generatedNames.length; i++) {

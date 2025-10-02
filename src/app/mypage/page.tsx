@@ -5,40 +5,9 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { supabase } from '@/lib/supabase'
 import { exportToPDF } from '@/lib/pdfExport'
-import dynamic from 'next/dynamic'
-
-// デバッグコンポーネントを動的インポート（開発環境のみ）
-const DatabaseDebug = dynamic(() => import('@/components/DatabaseDebug'), {
-  ssr: false,
-  loading: () => null
-})
-
-const TestDatabaseSave = dynamic(() => import('@/components/TestDatabaseSave'), {
-  ssr: false,
-  loading: () => null
-})
-
-interface GenerationHistoryItem {
-  id: string;
-  input_data: {
-    firstName: string;
-    gender: 'male' | 'female';
-    hasIngo: boolean;
-    hobbies: string[];
-    skills: string[];
-    personality: string;
-    customCharacter?: string;
-  };
-  generated_names: Array<{
-    name: string;
-    reading: string;
-    meaning: string;
-    reasoning: string;
-    buddhistContext: string;
-  }>;
-  is_favorited: boolean;
-  created_at: string;
-}
+import { ERROR_MESSAGES } from '@/lib/constants'
+import { logSupabaseError } from '@/lib/errorHandling'
+import type { GenerationHistoryItem } from '@/types'
 
 
 export default function MyPage() {
@@ -62,8 +31,10 @@ export default function MyPage() {
     try {
       await exportToPDF(exportData)
     } catch (error) {
-      console.error('PDF出力エラー:', error)
-      alert('PDF出力中にエラーが発生しました。')
+      if (process.env.NODE_ENV === 'development') {
+        console.error('PDF出力エラー:', error)
+      }
+      alert(ERROR_MESSAGES.PDF_EXPORT_ERROR)
     }
   }
 
@@ -76,7 +47,6 @@ export default function MyPage() {
       }
 
       // 履歴の取得
-      console.log('Fetching history for user:', user.id)
       const { data: historyData, error: historyError } = await supabase
         .from('generation_history')
         .select('*')
@@ -84,14 +54,8 @@ export default function MyPage() {
         .order('created_at', { ascending: false })
 
       if (historyError) {
-        console.error('履歴の取得エラー:', historyError)
-        console.error('Error details:', {
-          message: historyError.message,
-          code: historyError.code,
-          details: historyError.details
-        })
+        logSupabaseError('履歴取得', historyError)
       } else {
-        console.log('履歴データ取得成功:', historyData)
         setHistory(historyData || [])
       }
 
@@ -176,14 +140,6 @@ export default function MyPage() {
                 </div>
               ))}
             </div>
-          )}
-
-          {/* デバッグ情報（開発環境のみ） */}
-          {process.env.NODE_ENV === 'development' && (
-            <>
-              <TestDatabaseSave />
-              <DatabaseDebug />
-            </>
           )}
         </div>
       </div>

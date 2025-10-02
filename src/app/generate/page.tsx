@@ -4,26 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { exportToPDF } from '@/lib/pdfExport'
-
-interface GenerationRequest {
-  firstName: string;
-  gender: 'male' | 'female';
-  hasIngo: boolean;
-  hobbies: string[];
-  skills: string[];
-  personality: string;
-  customCharacter?: string;
-}
-
-interface GenerationResponse {
-  suggestions: Array<{
-    name: string;
-    reading: string;
-    meaning: string;
-    reasoning: string;
-    buddhistContext: string;
-  }>;
-}
+import { VALIDATION_RULES, ERROR_MESSAGES } from '@/lib/constants'
+import { getErrorMessage, logSupabaseError, getHistorySaveErrorMessage } from '@/lib/errorHandling'
+import type { GenerationRequest, GeneratedName } from '@/types'
 
 export default function GeneratePage() {
   const [name, setName] = useState('')
@@ -34,7 +17,7 @@ export default function GeneratePage() {
   const [personality, setPersonality] = useState('')
   const [customCharacter, setCustomCharacter] = useState('')
   const [loading, setLoading] = useState(false)
-  const [generatedNames, setGeneratedNames] = useState<GenerationResponse['suggestions']>([])
+  const [generatedNames, setGeneratedNames] = useState<GeneratedName[]>([])
   const [user, setUser] = useState<unknown>(null)
   
   // バリデーション状態
@@ -67,39 +50,39 @@ export default function GeneratePage() {
   // バリデーション関数
   const validateField = (fieldName: string, value: string) => {
     const newErrors = { ...errors }
-    
+
     switch (fieldName) {
       case 'name':
         if (!value.trim()) {
-          newErrors.name = '故人の名前は必須です'
-        } else if (value.trim().length < 2) {
-          newErrors.name = '名前は2文字以上で入力してください'
-        } else if (value.trim().length > 20) {
-          newErrors.name = '名前は20文字以内で入力してください'
+          newErrors.name = ERROR_MESSAGES.NAME_REQUIRED
+        } else if (value.trim().length < VALIDATION_RULES.NAME.MIN_LENGTH) {
+          newErrors.name = ERROR_MESSAGES.NAME_TOO_SHORT
+        } else if (value.trim().length > VALIDATION_RULES.NAME.MAX_LENGTH) {
+          newErrors.name = ERROR_MESSAGES.NAME_TOO_LONG
         } else {
           delete newErrors.name
         }
         break
-        
+
       case 'personality':
-        if (value.length > 1000) {
-          newErrors.personality = '1000文字以内で入力してください'
+        if (value.length > VALIDATION_RULES.PERSONALITY.MAX_LENGTH) {
+          newErrors.personality = ERROR_MESSAGES.PERSONALITY_TOO_LONG
         } else {
           delete newErrors.personality
         }
         break
-        
+
       case 'customCharacter':
-        if (value && value.length > 1) {
-          newErrors.customCharacter = '1文字のみ入力してください'
-        } else if (value && !/^[\u4E00-\u9FAF\u3040-\u3096\u30A0-\u30FC]$/.test(value)) {
-          newErrors.customCharacter = '日本語の文字を入力してください'
+        if (value && value.length > VALIDATION_RULES.CUSTOM_CHARACTER.MAX_LENGTH) {
+          newErrors.customCharacter = ERROR_MESSAGES.CUSTOM_CHARACTER_SINGLE_ONLY
+        } else if (value && !VALIDATION_RULES.CUSTOM_CHARACTER.PATTERN.test(value)) {
+          newErrors.customCharacter = ERROR_MESSAGES.CUSTOM_CHARACTER_JAPANESE_ONLY
         } else {
           delete newErrors.customCharacter
         }
         break
     }
-    
+
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -181,81 +164,39 @@ export default function GeneratePage() {
       })
 
       if (functionError) {
-        console.error('Function error:', functionError)
-        throw new Error(functionError.message || '法名生成に失敗しました。')
+        throw new Error(functionError.message || ERROR_MESSAGES.GENERATION_FAILED)
       }
 
       if (!data) {
-        throw new Error('法名データの取得に失敗しました。')
+        throw new Error(ERROR_MESSAGES.NO_DATA)
       }
       setGeneratedNames(data.suggestions)
 
-      // 履歴保存処理を強化
+      // 履歴保存処理
       const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser()
 
       if (userError) {
-        console.error('ユーザー取得エラー:', userError)
+        logSupabaseError('ユーザー取得', userError)
       } else if (currentUser) {
-        console.log('=== 履歴保存開始 ===')
-        console.log('User ID:', currentUser.id)
-        console.log('User Email:', currentUser.email)
-
         const historyData = {
           user_id: currentUser.id,
           input_data: requestBody,
           generated_names: data.suggestions,
         }
 
-        console.log('保存するデータ:', JSON.stringify(historyData, null, 2))
-
-        const { data: insertedData, error: insertError } = await supabase
+        const { error: insertError } = await supabase
           .from('generation_history')
           .insert(historyData)
           .select()
 
         if (insertError) {
-          console.error('❌ 履歴保存エラー:', insertError)
-          console.error('Error details:', {
-            message: insertError.message,
-            code: insertError.code,
-            details: insertError.details,
-            hint: insertError.hint
-          })
-
-          // エラーメッセージを詳細に表示
-          let errorMsg = `履歴保存エラー: ${insertError.message}`
-          if (insertError.code) {
-            errorMsg += `\nエラーコード: ${insertError.code}`
-          }
-          if (insertError.hint) {
-            errorMsg += `\nヒント: ${insertError.hint}`
-          }
-          alert(`法名の生成は完了しましたが、履歴の保存に失敗しました。\n\n${errorMsg}\n\nマイページに表示されない場合があります。`)
-        } else {
-          console.log('✅ 履歴保存成功!')
-          console.log('保存されたデータ:', insertedData)
-          console.log('=== 履歴保存完了 ===')
+          logSupabaseError('履歴保存', insertError)
+          alert(getHistorySaveErrorMessage(insertError))
         }
-      } else {
-        console.warn('⚠️ ユーザーが見つかりません。履歴は保存されません。')
       }
 
     } catch (error: unknown) {
-      console.error('法名生成エラー:', error)
-      
-      let errorMessage = '法名生成中にエラーが発生しました。'
-      
-      if (error instanceof Error && error.message?.includes('quota')) {
-        errorMessage = 'API利用制限に達しました。しばらく時間をおいてからお試しください。'
-      } else if (error instanceof Error && error.message?.includes('network')) {
-        errorMessage = 'ネットワークエラーが発生しました。インターネット接続を確認してください。'
-      } else if (error instanceof Error && error.message?.includes('GEMINI_API_KEY')) {
-        errorMessage = 'APIキーの設定に問題があります。管理者にお問い合わせください。'
-      } else if (error instanceof Error && error.message) {
-        errorMessage = error.message
-      }
-      
-      alert(errorMessage)
+      alert(getErrorMessage(error))
     } finally {
       setLoading(false)
     }
@@ -263,7 +204,7 @@ export default function GeneratePage() {
 
   const handleExportPDF = async () => {
     if (generatedNames.length === 0) {
-      alert('エクスポートする法名案がありません。')
+      alert(ERROR_MESSAGES.NO_EXPORT_DATA)
       return
     }
 
@@ -282,8 +223,10 @@ export default function GeneratePage() {
     try {
       await exportToPDF(exportData)
     } catch (error) {
-      console.error('PDF出力エラー:', error)
-      alert('PDF出力中にエラーが発生しました。')
+      if (process.env.NODE_ENV === 'development') {
+        console.error('PDF出力エラー:', error)
+      }
+      alert(ERROR_MESSAGES.PDF_EXPORT_ERROR)
     }
   }
 
