@@ -17,15 +17,6 @@ export const metadata: Metadata = {
   keywords: ['法名', '浄土真宗', '仏教', '法名生成', '院号', '戒名', '釋'],
   authors: [{ name: '法名ジェネレーター' }],
   manifest: '/site.webmanifest',
-  icons: {
-    icon: [
-      { url: '/favicon.ico', sizes: 'any' },
-      { url: '/icon.png', type: 'image/png', sizes: '100x100' },
-    ],
-    apple: [
-      { url: '/apple-icon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
   openGraph: {
     title: '法名ジェネレーター | 浄土真宗の法名を自動生成',
     description: '故人の人柄や人生を反映した、浄土真宗の教義に基づいた法名を自動生成します。',
