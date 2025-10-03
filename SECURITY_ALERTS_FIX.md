@@ -50,18 +50,60 @@ CREATE TRIGGER update_generation_history_updated_at
 
 **問題**: OTP（ワンタイムパスワード）の有効期限が1時間以上
 
-**修正方法**:
-1. Supabaseダッシュボード → **Settings** → **Auth**
-2. スクロールして「Authentication」セクションを探す
-3. 「OTP Expiry」または「Email OTP Expiry」を見つける
-4. 値を **3600秒（1時間）以下** に設定
-   - 推奨: **3600秒（1時間）** または **1800秒（30分）**
-5. 「Save」をクリック
+**修正方法（ダッシュボード）**:
 
-**注意**: 設定項目が見つからない場合、Supabase CLIで設定可能:
+以下の順番で探してください：
+
+1. **Authentication** → **Emails** → 各メールテンプレート内
+   - 「Confirm signup」「Magic Link」などのテンプレートを開く
+   - 「Token Expiry」「OTP Expiry」などの設定があるか確認
+
+2. **Authentication** → **Configuration**
+   - スクロールして「Email」または「OTP」関連の設定を探す
+   - 「Token expiry」「OTP expiry」などのフィールドがあるか確認
+
+3. **Authentication** → **Rate Limits**
+   - OTP Rate Limitは設定できますが、expiryは別の場所です
+
+**注意**: 現在のSupabase UIでは、OTP Expiryがダッシュボードに表示されない場合があります。その場合は以下の方法で設定してください。
+
+**修正方法（Supabase CLI - 推奨）**:
+
 ```bash
+# Supabase CLIをインストール（未インストールの場合）
+npm install -g supabase
+
+# プロジェクトにログイン
+supabase login
+
+# プロジェクトにリンク
+supabase link --project-ref YOUR_PROJECT_REF
+
+# OTP有効期限を3600秒（1時間）に設定
 supabase secrets set GOTRUE_MAILER_OTP_EXP=3600
+
+# 設定を確認
+supabase secrets list
 ```
+
+**修正方法（Supabase Management API）**:
+
+ダッシュボードとCLIの両方で設定できない場合、Management APIを使用：
+
+```bash
+curl -X PATCH \
+  'https://api.supabase.com/v1/projects/YOUR_PROJECT_REF/config/auth' \
+  -H 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "MAILER_OTP_EXP": 3600
+  }'
+```
+
+**推奨設定値**:
+- **3600秒（1時間）** - 警告を解消する最小値
+- **1800秒（30分）** - より安全
+- **900秒（15分）** - 最も安全（UX要検討）
 
 ---
 
@@ -69,22 +111,41 @@ supabase secrets set GOTRUE_MAILER_OTP_EXP=3600
 
 **問題**: 漏洩パスワード保護が無効
 
-**修正方法**:
-1. Supabaseダッシュボード → **Settings** → **Auth**
-2. スクロールして「Password Security」または「Security」セクションを探す
-3. **「Leaked Password Protection」または「Check against leaked passwords」をONにする**
-   - HaveIBeenPwned.org Pwned Passwords APIと照合
-   - 既知の漏洩パスワードの使用を防止
-4. 「Save」または「Update」をクリック
+**修正方法（ダッシュボード）**:
 
-**重要**: この機能は **Pro Plan以上** で利用可能です。Free Planの場合は、プラン変更が必要です。
+以下の場所を確認してください：
 
-**追加のパスワードセキュリティ設定** (同じページで設定可能):
-- Minimum password length: **8文字以上** (推奨)
-- Require digits: ON (推奨)
-- Require lowercase letters: ON (推奨)
-- Require uppercase letters: ON (推奨)
-- Require symbols: ON (推奨)
+1. **Authentication** → **Policies** または **Configuration**
+   - 「Password Requirements」「Password Security」セクションを探す
+   - **「Check passwords against HaveIBeenPwned」**
+   - **「Enable leaked password protection」**
+   - などのチェックボックスを探してONにする
+
+2. **Authentication** → **Attack Protection**
+   - パスワード関連のセキュリティ設定があるか確認
+
+**⚠️ 重要**:
+- この機能は **Pro Plan以上** でのみ利用可能です
+- Free Planの場合は、プランアップグレードが必要です
+- ダッシュボードに表示されない場合、プランを確認してください
+
+**プランの確認方法**:
+1. Settings → Billing で現在のプランを確認
+2. Free Planの場合、Pro Planへのアップグレードを検討
+
+**追加のパスワードセキュリティ設定** (Policies/Configurationで設定):
+- ✅ Minimum password length: **8文字以上**
+- ✅ Require at least one digit
+- ✅ Require at least one lowercase letter
+- ✅ Require at least one uppercase letter
+- ✅ Require at least one symbol
+
+**Supabase CLIでの確認**:
+
+```bash
+# 現在のAuth設定を確認
+supabase status
+```
 
 ---
 
